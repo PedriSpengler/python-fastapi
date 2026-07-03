@@ -1,40 +1,137 @@
-# Python PostgreSQL CRUD 🚀
+# API CRUD — FastAPI + PostgreSQL
 
-Este é um projeto prático que implementa um sistema completo de **CRUD** (Create, Read, Update, Delete) em Python, utilizando o driver **Psycopg2** para se conectar e manipular um banco de dados **PostgreSQL**. O projeto foi estruturado utilizando boas práticas, como o isolamento de credenciais em variáveis de ambiente (`.env`) e organização de código em funções.
+API REST para gerenciamento de usuários, construída com **FastAPI** e **PostgreSQL**, utilizando **psycopg2** para acesso ao banco de dados.
 
----
+## ✨ Funcionalidades
 
-## 🛠️ Tecnologias Utilizadas
+- ✅ Criar usuário
+- ✅ Listar usuários
+- ✅ Atualizar e-mail de um usuário
+- ✅ Deletar usuário
+- ✅ Criação automática da tabela no startup da aplicação
+- ✅ Validação de dados com Pydantic
 
-* **Python 3.x**
-* **PostgreSQL** (Banco de dados relacional)
-* **Psycopg2** (Driver de conexão PostgreSQL para Python)
-* **Python-dotenv** (Gerenciamento de variáveis de ambiente)
+## 🛠️ Tecnologias
 
----
+- [Python 3.10+](https://www.python.org/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [psycopg2](https://www.psycopg.org/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
+- [Uvicorn](https://www.uvicorn.org/)
 
-## 📋 Funcionalidades (Operações CRUD)
+## 📁 Estrutura do projeto
 
-O script gerencia uma entidade chamada `users` (usuários) e executa o ciclo completo de persistência de dados:
+```
+.
+├── database.py       # Conexão e operações CRUD com o PostgreSQL
+├── main.py           # Endpoints da API (FastAPI)
+├── requirements.txt  # Dependências do projeto
+├── .env.example       # Modelo de variáveis de ambiente
+└── README.md
+```
 
-* **Conexão Segura:** Inicialização e fechamento limpo de conexões e cursores.
-* **Initialization (Setup):** Criação automática da tabela `users` caso ela não exista (`IF NOT EXISTS`).
-* **Create:** Inserção de novos registros com passagem segura de parâmetros (prevenção contra SQL Injection).
-* **Read:** Consulta e exibição de todos os registros salvos no banco.
-* **Update:** Atualização dinâmica de dados cadastrados (ex: alteração de e-mail).
-* **Delete:** Remoção física de registros do banco de dados.
+## 🚀 Como executar
 
----
+### 1. Clone o repositório
 
-## 🚀 Como Executar o Projeto
-
-### 1. Pré-requisitos
-Certifique-se de ter instalado em sua máquina:
-* Python 3 instalado.
-* Instância do PostgreSQL rodando (local ou em container).
-* Um banco de dados criado (ex: `crudpython`).
-
-### 2. Clonar o Repositório
 ```bash
-git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+git clone https://github.com/seu-usuario/seu-repositorio.git
 cd seu-repositorio
+```
+
+### 2. Crie e ative um ambiente virtual
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+```
+
+### 3. Instale as dependências
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+
+```env
+DB_USERNAME=seu_usuario
+DB_PASSWORD=sua_senha
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=nome_do_banco
+```
+
+### 5. Execute a aplicação
+
+```bash
+uvicorn main:app --reload
+```
+
+A API estará disponível em `http://127.0.0.1:8000`.
+
+A tabela `users` é criada automaticamente na primeira execução.
+
+## 📚 Documentação interativa
+
+O FastAPI gera documentação automática assim que o servidor está rodando:
+
+- **Swagger UI:** `http://127.0.0.1:8000/docs`
+- **ReDoc:** `http://127.0.0.1:8000/redoc`
+
+## 🔌 Endpoints
+
+| Método | Endpoint             | Descrição                       |
+|--------|-----------------------|----------------------------------|
+| POST   | `/users/`              | Cria um novo usuário             |
+| GET    | `/users/`              | Lista todos os usuários          |
+| PUT    | `/users/{username}`    | Atualiza o e-mail de um usuário  |
+| DELETE | `/users/{username}`    | Remove um usuário                |
+
+### Exemplos com `curl`
+
+**Criar usuário**
+```bash
+curl -X POST "http://127.0.0.1:8000/users/" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "junior", "email": "jrmoci@example.com"}'
+```
+
+**Listar usuários**
+```bash
+curl -X GET "http://127.0.0.1:8000/users/"
+```
+
+**Atualizar e-mail**
+```bash
+curl -X PUT "http://127.0.0.1:8000/users/junior" \
+  -H "Content-Type: application/json" \
+  -d '{"new_email": "novo@example.com"}'
+```
+
+**Deletar usuário**
+```bash
+curl -X DELETE "http://127.0.0.1:8000/users/junior"
+```
+
+## 🗄️ Modelo de dados
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+```
+
+## 📌 Roadmap
+
+- [ ] Endpoint `GET /users/{username}` para buscar usuário específico
+- [ ] Paginação na listagem de usuários
+- [ ] Autenticação (JWT)
+- [ ] Testes automatizados (pytest)
+- [ ] Deploy (Docker + Railway/Render)
