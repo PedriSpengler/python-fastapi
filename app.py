@@ -1,123 +1,66 @@
-from multiprocessing import connection
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import database
+from contextlib import asynccontextmanager
 
-import psycopg2
-from dotenv import load_dotenv
-import os   
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    database.create_table()
+    yield
 
-load_dotenv()
+app = FastAPI(
+    lifespan=lifespan,
+    title="API CRUD Python and PostgreSQL",
+    description="API to CRUD with FastAPI and PostgreSQL",
+    version="1.0.0"
+)
 
-# CREATE A CONNECTION TO THE POSTGRESQL DATABASE
+# DEFINING THE USER SCHEMA FOR REQUEST BODY VALIDATION
+class UserSchema(BaseModel):
+    username: str
+    email: str
 
-def connect_to_database():
+# API ENDPOINTS
+@app.post("/users/")
+def create_user(user: UserSchema):
     try:
-        connection = psycopg2.connect(
-            user=os.getenv("DB_USERNAME"),
-            password=os.getenv("DB_PASSWORD"),
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            database=os.getenv("DB_DATABASE")
-        )
-        print("Connection to the database was successful!")
-        return connection
+        user_id = database.insert_user(user.username, user.email)
+        return {"message": "Usuário criado com sucesso", "id": user_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    except psycopg2.Error as e:
-        print("Error while connecting to PostgreSQL:", e)
-        return None
-
-# CREATE A NEW TABLE IN THE DATABASE
-
-def create_table(connection):
-
+@app.get("/users/")
+def get_users():
     try:
-        cursor = connection.cursor()
+        users = database.read_users()
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+class UpdateEmailSchema(BaseModel):
+    new_email: str
 
-        create_table_query = """
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(50) NOT NULL,
-            email VARCHAR(100) NOT NULL UNIQUE
-        )
-        """
-        cursor.execute(create_table_query)
-        print("Table 'users' created successfully!")
-
-    except psycopg2.Error as e:
-        print("Error while creating the table:", e)
-
-# INSERT A NEW USER IN THE TABLE (CREATE OPERATION)
-
-def insert_user(connection, username, email):
+@app.put("/users/{username}")
+def update_user(username: str, data: UpdateEmailSchema):
     try:
-        cursor = connection.cursor()
+        rows_affected = database.update_user_email(username, data.new_email)
+        if rows_affected == 0:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return {"message": f"Email do usuário '{username}' atualizado com sucesso"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-        insert_query = "INSERT INTO users (username, email) VALUES (%s, %s)"
-        users_data = (username, email)
 
-        cursor.execute(insert_query, users_data)
-        connection.commit()
-        print("Data inserted successfully into the 'users' table!")
-
-    except psycopg2.Error as e:
-        print("Error while inserting data into the table:", e)
-
-# RETRIEVE DATA FROM THE TABLE (READ OPERATION)
-
-def read_users(connection):
+@app.delete("/users/{username}")
+def remove_user(username: str):
     try:
-        cursor = connection.cursor()
-
-        select_query = "SELECT * FROM users"
-
-        cursor.execute(select_query)
-
-        for row in cursor:
-            print(f"ID: {row[0]}, Username: {row[1]}, Email: {row[2]}")
-
-    except psycopg2.Error as e:
-        print("Error while retrieving data from the table:", e)
-
-# UPDATE DATA IN THE TABLE (UPDATE OPERATION)
-
-def update_user_email(connection, username, new_email):
-    try:
-        cursor = connection.cursor()
-
-        update_query = "UPDATE users SET email = %s WHERE username = %s"
-        user_data = (new_email, username)
-
-        cursor.execute(update_query, user_data)
-        connection.commit()
-        print(f"Data updated successfully for user '{username}' in the 'users' table!")
-
-    except psycopg2.Error as e:
-        print("Error while updating data in the table:", e)
-
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-
-# DELETE DATA FROM THE TABLE (DELETE OPERATION)
-
-def delete_user(connection, username):
-    try:
-        cursor = connection.cursor()
-
-        delete_query = "DELETE FROM users WHERE username = %s"
-        user_data = (username,)
-        cursor.execute(delete_query, user_data)
-        connection.commit()
-        print(f"Data deleted successfully for user '{username}' from the 'users' table!")
-
-    except psycopg2.Error as e:
-        print("Error while deleting data from the table:", e)
-
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-
-if __name__ == "__main__":
-    connection = connect_to_database()
-    if connection:
-        create_table(connection)
-        insert_user(connection, "junior", "jrmoci@example.com")
-        read_users(connection)
+        rows_affected = database.delete_user(username)
+        if rows_affected == 0:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return {"message": f"Usuário '{username}' deletado com sucesso"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
