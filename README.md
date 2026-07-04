@@ -2,6 +2,8 @@
 
 API REST para gerenciamento de usuários, construída com **FastAPI** e **PostgreSQL**, utilizando **psycopg2** para acesso ao banco de dados.
 
+<img width="933" height="466" alt="image" src="https://github.com/user-attachments/assets/04b1fd75-98da-4406-90bd-9c3b3a810d4a" />
+
 ## ✨ Funcionalidades
 
 - ✅ Criar usuário
