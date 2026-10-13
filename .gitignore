@@ -1,1 +1,19 @@
+# Ambiente
 .env
+.venv/
+venv/
+
+# Bytecode Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches de ferramentas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Empacotamento
+*.egg-info/
+dist/
+build/
